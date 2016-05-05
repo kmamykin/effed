@@ -1,0 +1,25 @@
+{
+  "name": "effed",
+  "version": "0.0.1",
+  "description": "Effects library for JavaScript",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kmamykin/effed.git"
+  },
+  "keywords": [
+    "javascript",
+    "effect",
+    "functional",
+    "generator"
+  ],
+  "author": "Kliment Mamykin",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kmamykin/effed/issues"
+  },
+  "homepage": "https://github.com/kmamykin/effed#readme"
+}
