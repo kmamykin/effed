@@ -27,7 +27,9 @@ function co(interpreter, gen) {
   // which leads to memory leak errors.
   // see https://github.com/tj/co/issues/180
   return new Promise(function(resolve, reject) {
-    if (!gen || typeof gen.next !== 'function') return resolve(gen);
+    if (!gen) return resolve(gen);
+    if (isEffect(gen)) return interpreter(gen).then(resolve, reject);
+    if (typeof gen.next !== 'function') return resolve(gen);
 
     onFulfilled();
 

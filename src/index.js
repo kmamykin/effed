@@ -3,8 +3,8 @@ const {Effect, isEffect} = require('./effect')
 
 // interpreter :: effect -> Promise
 // script :: Iterator<effect>
-const createRunner = interpreter => script => {
-  return co(interpreter, script)
+const createRunner = interpreter => effect => {
+  return co(interpreter, effect)
 }
 
 // combineInterpreters :: [interpreter] -> interpreter
