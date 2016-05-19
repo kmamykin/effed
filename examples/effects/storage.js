@@ -5,7 +5,7 @@ const setItem = (key, value) => Effect({type: 'SET_ITEM', key, value})
 const removeItem = key => Effect({type: 'REMOVE_ITEM', key})
 const clear = () => Effect({type: 'CLEAR'})
 
-const storage = {
+const effects = {
   getItem,
   setItem,
   removeItem,
@@ -51,7 +51,7 @@ const mapRunner = map => effect => {
 }
 
 module.exports = {
-  storage,
+  effects,
   runner,
   mapRunner
 }

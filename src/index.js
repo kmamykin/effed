@@ -1,8 +1,9 @@
 const co = require('./co')
 const {Effect, isEffect} = require('./effect')
+
 // interpreter :: effect -> Promise
 // script :: Iterator<effect>
-const effects = interpreter => script => {
+const createRunner = interpreter => script => {
   return co(interpreter, script)
 }
 
@@ -22,9 +23,9 @@ const simulate = (script, interpreter) => {
 
 
 module.exports = {
-  effects,
   isEffect,
   Effect,
+  createRunner,
   combineInterpreters,
   simulate
 }

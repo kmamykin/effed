@@ -1,5 +1,5 @@
 const assert = require('assert')
-const {storage} = require('./effects/storage')
+const {effects: storage} = require('./effects/storage')
 
 function * transferAmount (from, to, amount) {
   assert(from && from.length > 0, 'from is empty')
@@ -25,11 +25,11 @@ function * transferThrough (from, through, to, amount) {
   return amount
 }
 
-const {effects} = require('../src/index')
+const {createRunner} = require('../src/index')
 const {mapRunner} = require('./effects/storage')
 
 const map = new Map([['accounts:yours', 10000000], ['accounts:mine', 0]])
-const run = effects(mapRunner(map))
+const run = createRunner(mapRunner(map))
 
 run(transferAmount('yours', 'mine', 1000)).then(console.log, console.error).then(() => console.log(map))
 run(transferThrough('yours', 'intermediary', 'mine', 1000)).then(console.log, console.error).then(() => console.log(map))
