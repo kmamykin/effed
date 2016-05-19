@@ -1,4 +1,4 @@
-
+const {isEffect} = require('./effect') 
 /**
  * slice() reference.
  */
@@ -12,26 +12,6 @@ var slice = Array.prototype.slice;
 module.exports = co['default'] = co.co = co;
 
 /**
- * Wrap the given generator `fn` into a
- * function that returns a promise.
- * This is a separate function so that
- * every `co()` call doesn't create a new,
- * unnecessary closure.
- *
- * @param {GeneratorFunction} fn
- * @return {Function}
- * @api public
- */
-
-co.wrap = function (fn) {
-  createPromise.__generatorFunction__ = fn;
-  return createPromise;
-  function createPromise() {
-    return co.call(this, fn.apply(this, arguments));
-  }
-};
-
-/**
  * Execute the generator function or a generator
  * and return a promise.
  *
@@ -40,15 +20,13 @@ co.wrap = function (fn) {
  * @api public
  */
 
-function co(gen) {
+function co(interpreter, gen) {
   var ctx = this;
-  var args = slice.call(arguments, 1);
 
   // we wrap everything in a promise to avoid promise chaining,
   // which leads to memory leak errors.
   // see https://github.com/tj/co/issues/180
   return new Promise(function(resolve, reject) {
-    if (typeof gen === 'function') gen = gen.apply(ctx, args);
     if (!gen || typeof gen.next !== 'function') return resolve(gen);
 
     onFulfilled();
@@ -96,32 +74,35 @@ function co(gen) {
      */
 
     function next(ret) {
-      if (ret.done) return resolve(ret.value);
+      if (ret.done) return resolve(ret.value); // interpret the last effect returned?
       var value = toPromise.call(ctx, ret.value);
       if (value && isPromise(value)) return value.then(onFulfilled, onRejected);
       return onRejected(new TypeError('You may only yield a function, promise, generator, array, or object, '
         + 'but the following object was passed: "' + String(ret.value) + '"'));
     }
   });
+  
+  /**
+   * Convert a `yield`ed value into a promise.
+   *
+   * @param {Mixed} obj
+   * @return {Promise}
+   * @api private
+   */
+  
+  function toPromise(obj) {
+    console.log(obj)
+    if (!obj) return obj;
+    if (isEffect(obj)) return interpreter(obj);
+    if (isPromise(obj)) return obj;
+    if (isGeneratorFunction(obj) || isGenerator(obj)) return co.call(this, interpreter, obj);
+    if ('function' == typeof obj) return thunkToPromise.call(this, obj);
+    if (Array.isArray(obj)) return arrayToPromise.call(this, obj);
+    if (isObject(obj)) return objectToPromise.call(this, obj);
+    return obj;
+  }
 }
 
-/**
- * Convert a `yield`ed value into a promise.
- *
- * @param {Mixed} obj
- * @return {Promise}
- * @api private
- */
-
-function toPromise(obj) {
-  if (!obj) return obj;
-  if (isPromise(obj)) return obj;
-  if (isGeneratorFunction(obj) || isGenerator(obj)) return co.call(this, obj);
-  if ('function' == typeof obj) return thunkToPromise.call(this, obj);
-  if (Array.isArray(obj)) return arrayToPromise.call(this, obj);
-  if (isObject(obj)) return objectToPromise.call(this, obj);
-  return obj;
-}
 
 /**
  * Convert a thunk to a promise.
