@@ -41,14 +41,13 @@ Promise.resolve().then(() =>
 )
 
 const test = require('tape')
-test('transferAmount', function (t) {
-  t.end()
-  //playByPlay(transferAmount('yours', 'mine', 1000))
-  //  .expect(storage.getItem(`accounts:yours`), 1000)
-  //  .expect(storage.getItem(`accounts:mine`), 0)
-  //  .expect(storage.setItem('accounts:yours', 0))
-  //  .expect(storage.setItem('accounts:mine', 1000))
-  //  .returns(1000)
-  //  .then(console.log, console.error)
-})
+const {simulate} = require('../src/testing')
+test('transferAmount', simulate(transferAmount('yours', 'mine', 1000))
+    .yields(storage.getItem(`accounts:yours`), 1000)
+    .yields(storage.getItem(`accounts:mine`), 0)
+    .yields(storage.setItem('accounts:yours', 0))
+    .yields(storage.setItem('accounts:mine', 1000))
+    .returns(1000)
+    .end()
+)
 

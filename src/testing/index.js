@@ -1,5 +1,5 @@
 
-export const playByPlay = script => {
+const playByPlay = script => {
   const builder = (expectations, result) => ({
     expect: (effect, effectResult) => builder([...expectations, [effect, effectResult]], result),
     returns: r => builder(expectations, r),
@@ -28,3 +28,41 @@ export const playByPlay = script => {
   })
   return builder([], undefined)
 }
+
+const yieldExpectation = (effect, result) => (t, actual) => {
+  console.log('Expected', effect)
+  console.log('Actual', actual)
+  t.deepEqual(actual, effect)
+  return result
+}
+
+const returnsExpectation = (expectedReturn) => (t, actualReturn) => {
+  console.log(expectedReturn)
+  t.deepEqual(actualReturn, expectedReturn)
+}
+
+const noReturnsExpectation = () => (t, actualReturn) => {
+  console.log(actualReturn)
+}
+
+const createSumulator = (script, expectations, returnCheck) => {
+  return {
+    yields: (effect, result = undefined) => createSumulator(script, [...expectations, yieldExpectation(effect, result)], returnCheck),
+    returns: (returnValue) => createSumulator(script, expectations, returnsExpectation(returnValue)),
+    end: () => (t) => {
+      let yielded = script.next()
+      while(!yielded.done) {
+        let expected = expectations.shift()
+        yielded = script.next(expected(t, yielded.value))
+      }
+      // check return
+      returnCheck(t, yielded.value)
+      t.end()
+    }
+  }
+}
+
+module.exports = {
+  simulate: (script) => createSumulator(script, [], noReturnsExpectation())
+}
+
