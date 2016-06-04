@@ -1,5 +1,6 @@
 const assert = require('assert')
-const { effects: storage } = require('./effects/storage')
+const util = require('util')
+const storage = require('./effects/storage').default
 
 function * transferAmount (from, to, amount) {
   assert(from && from.length > 0, 'from is empty')
@@ -39,15 +40,18 @@ Promise.resolve().then(() =>
 ).then(() =>
   run(storage.getItem(`accounts:yours`)).then(console.log, console.error).then(() => console.log(map))
 )
+console.log(util.inspect(storage.getItem(`accounts:yours`), {showHidden: true}))
+console.log(util.inspect(storage.getItem(`accounts:yours`), {showHidden: true}))
+assert.deepEqual(storage.getItem(`accounts:yours`), storage.getItem(`accounts:yours`))
 
-const test = require('tape')
-const {simulate} = require('../src/testing')
-test('transferAmount', simulate(transferAmount('yours', 'mine', 1000))
-    .yields(storage.getItem(`accounts:yours`), 1000)
-    .yields(storage.getItem(`accounts:mine`), 0)
-    .yields(storage.setItem('accounts:yours', 0))
-    .yields(storage.setItem('accounts:mine', 1000))
-    .returns(1000)
-    .end()
-)
-
+// const test = require('tape')
+// const {simulate} = require('../src/testing')
+// test('transferAmount', simulate(transferAmount('yours', 'mine', 1000))
+//     .yields(storage.getItem(`accounts:yours`), 1000)
+//     .yields(storage.getItem(`accounts:mine`), 0)
+//     .yields(storage.setItem('accounts:yours', 0))
+//     .yields(storage.setItem('accounts:mine', 1000))
+//     .returns(1000)
+//     .end()
+// )
+//

@@ -94,6 +94,7 @@ function co(interpreter, gen) {
   
   function toPromise(obj) {
     console.log(obj)
+    console.log(isEffect(obj))
     if (!obj) return obj;
     if (isEffect(obj)) return interpreter(obj);
     if (isPromise(obj)) return obj;

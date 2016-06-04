@@ -1,8 +1,9 @@
+const union = require('./union')
 const effectMarker = Symbol('effect')
-const Effect = (props) => Object.assign({[effectMarker]: true}, props)
-const isEffect = (effect) => effect[effectMarker] == true
 
+const isEffect = (effect) => effect && effect[effectMarker]
+const Effects = (defs) => union(defs, {[effectMarker]: true})
 module.exports = {
-  Effect,
+  Effects,
   isEffect
 }
