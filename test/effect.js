@@ -8,6 +8,6 @@ const effects = Effects({
   Three: ['x', 'y', 'z']
 })
 
-test('isEffect', (t) => {
+test.skip('isEffect', (t) => {
   t.ok(isEffect(effects.Zero()))
 })

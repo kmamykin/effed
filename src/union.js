@@ -5,15 +5,15 @@ const TAG = Symbol('TAG')
 const TYPE = Symbol('TYPE')
 
 function createUnionType (types) {
-  return function UnionType() {
+  return function UnionType () {
     throw TypeError(`Union type can not be used without concrete constructor. User ${types}`)
   }
 }
 
-function createClass (unionConstructor, typeName) {
+function createClass (unionConstructor, typeName, argsParser) {
   const F = function (...args) {
     if (this instanceof F) {
-      this.args = args
+      this.args = argsParser(...args)
       // console.log(this)
     } else {
       return new F(...args)
@@ -21,12 +21,19 @@ function createClass (unionConstructor, typeName) {
   }
   F.prototype = Object.create(unionConstructor.prototype)
   F.prototype.constructor = F
-  Object.defineProperty(F, 'name', {value: typeName, configurable: true})
+  F.prototype.match = function (cases) {
+    const { [typeName]: matchedCase, _: defaultCase = returnVoid } = cases
+    return typeof matchedCase === 'function'
+      ? matchedCase(this.args)
+      : (typeof matchedCase === 'undefined' ? defaultCase(this.args) : matchedCase)
+  }
+
+  Object.defineProperty(F, 'name', { value: typeName, configurable: true })
   return F
 }
 
 const union = (types, mixins = {}) => {
-  const parseConstructorParams = (typeName, ...args) => {
+  const parseConstructorParams = (typeName) => (...args) => {
     if (args.length === 1 && typeof args[0] === 'object') {
       return args[0] // constructor called with an object, like constructor({x:1, y: 2})
     } else {
@@ -37,7 +44,7 @@ const union = (types, mixins = {}) => {
     }
   }
   const createTypeConstructor = (unionType, typeName) => {
-    const Type = createClass(unionType, typeName)
+    const Type = createClass(unionType, typeName, parseConstructorParams(typeName))
     return Type
 
     // important to use function () ... not =>, so 'this' is not lexical, but the actual object instance
@@ -46,19 +53,11 @@ const union = (types, mixins = {}) => {
       // inspect: function () {
       //   return `${typeName}(${util.inspect(Object.assign({}, this))})` // using Object.assign({}, this) so util.inspect does not infinitely recurse
       // },
-      type: typeName,
-      match: function (cases) {
-        const { [typeName]: matchedCase, _: defaultCase = returnVoid } = cases
-        return typeof matchedCase === 'function'
-          ? matchedCase(this)
-          : (typeof matchedCase === 'undefined' ? defaultCase(this) : matchedCase)
-      }
     }
     return (...args) => {
-      const params = parseConstructorParams(typeName, ...args)
+      const params = parseConstructorParams(typeName)(...args)
       // These properties are hidden but will be used to in the prototype (deep)compare instances of types
-      const properties = {
-      }
+      const properties = {}
       return Object.assign(Object.create(proto), properties, params, mixins)
     }
   }
