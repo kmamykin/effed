@@ -1,8 +1,6 @@
 // TODO: move union in a different npm module
 const util = require('util')
 const returnVoid = x => {}
-const TAG = Symbol('TAG')
-const TYPE = Symbol('TYPE')
 
 function createUnionType (types) {
   return function UnionType () {
@@ -14,7 +12,6 @@ function createClass (unionConstructor, typeName, argsParser) {
   const F = function (...args) {
     if (this instanceof F) {
       this.args = argsParser(...args)
-      // console.log(this)
     } else {
       return new F(...args)
     }
@@ -47,18 +44,11 @@ const union = (types, mixins = {}) => {
     const Type = createClass(unionType, typeName, parseConstructorParams(typeName))
     return Type
 
-    // important to use function () ... not =>, so 'this' is not lexical, but the actual object instance
     const proto = {
       // toString: () => proto.inspect(),
       // inspect: function () {
       //   return `${typeName}(${util.inspect(Object.assign({}, this))})` // using Object.assign({}, this) so util.inspect does not infinitely recurse
       // },
-    }
-    return (...args) => {
-      const params = parseConstructorParams(typeName)(...args)
-      // These properties are hidden but will be used to in the prototype (deep)compare instances of types
-      const properties = {}
-      return Object.assign(Object.create(proto), properties, params, mixins)
     }
   }
   const createTypes = (types) => Object.keys(types).reduce((unionType, typeName) => {

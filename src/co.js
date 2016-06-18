@@ -1,4 +1,4 @@
-const {isEffect} = require('./effect') 
+const { isEffect } = require('./effect')
 /**
  * slice() reference.
  */
@@ -20,16 +20,13 @@ module.exports = co['default'] = co.co = co;
  * @api public
  */
 
-function co(interpreter, gen) {
-  var ctx = this;
-
+function co (interpreter, gen) {
+  if (isGeneratorFunction(gen)) return co(interpreter, gen())
   // we wrap everything in a promise to avoid promise chaining,
   // which leads to memory leak errors.
   // see https://github.com/tj/co/issues/180
-  return new Promise(function(resolve, reject) {
-    if (!gen) return resolve(gen);
-    if (isEffect(gen)) return interpreter(gen).then(resolve, reject);
-    if (typeof gen.next !== 'function') return resolve(gen);
+  return new Promise(function (resolve, reject) {
+    if (!gen || !isIterator(gen)) return resolve(gen);
 
     onFulfilled();
 
@@ -39,7 +36,7 @@ function co(interpreter, gen) {
      * @api private
      */
 
-    function onFulfilled(res) {
+    function onFulfilled (res) {
       var ret;
       try {
         ret = gen.next(res);
@@ -56,7 +53,7 @@ function co(interpreter, gen) {
      * @api private
      */
 
-    function onRejected(err) {
+    function onRejected (err) {
       var ret;
       try {
         ret = gen.throw(err);
@@ -75,37 +72,38 @@ function co(interpreter, gen) {
      * @api private
      */
 
-    function next(ret) {
+    function next (ret) {
+      // console.log(ret)
       if (ret.done) return resolve(ret.value); // interpret the last effect returned?
-      var value = toPromise.call(ctx, ret.value);
+      // var value = toPromise.call(ctx, ret.value);
+      var value = interpreter(ret.value)
       if (value && isPromise(value)) return value.then(onFulfilled, onRejected);
       return onRejected(new TypeError('You may only yield a function, promise, generator, array, or object, '
         + 'but the following object was passed: "' + String(ret.value) + '"'));
     }
   });
-  
-  /**
-   * Convert a `yield`ed value into a promise.
-   *
-   * @param {Mixed} obj
-   * @return {Promise}
-   * @api private
-   */
-  
-  function toPromise(obj) {
-    console.log(obj)
-    console.log(isEffect(obj))
-    if (!obj) return obj;
-    if (isEffect(obj)) return interpreter(obj);
-    if (isPromise(obj)) return obj;
-    if (isGeneratorFunction(obj) || isGenerator(obj)) return co.call(this, interpreter, obj);
-    if ('function' == typeof obj) return thunkToPromise.call(this, obj);
-    if (Array.isArray(obj)) return arrayToPromise.call(this, obj);
-    if (isObject(obj)) return objectToPromise.call(this, obj);
-    return obj;
-  }
 }
 
+/**
+ * Convert a `yield`ed value into a promise.
+ *
+ * @param {Mixed} obj
+ * @return {Promise}
+ * @api private
+ */
+
+function toPromise (obj) {
+  // console.log(obj)
+  // console.log(isEffect(obj))
+  if (!obj) return obj;
+  if (isEffect(obj)) return interpreter(obj);
+  if (isPromise(obj)) return obj;
+  if (isGeneratorFunction(obj) || isGenerator(obj)) return co.call(this, interpreter, obj);
+  if ('function' == typeof obj) return thunkToPromise.call(this, obj);
+  if (Array.isArray(obj)) return arrayToPromise.call(this, obj);
+  if (isObject(obj)) return objectToPromise.call(this, obj);
+  return obj;
+}
 
 /**
  * Convert a thunk to a promise.
@@ -115,7 +113,7 @@ function co(interpreter, gen) {
  * @api private
  */
 
-function thunkToPromise(fn) {
+function thunkToPromise (fn) {
   var ctx = this;
   return new Promise(function (resolve, reject) {
     fn.call(ctx, function (err, res) {
@@ -135,7 +133,7 @@ function thunkToPromise(fn) {
  * @api private
  */
 
-function arrayToPromise(obj) {
+function arrayToPromise (obj) {
   return Promise.all(obj.map(toPromise, this));
 }
 
@@ -148,7 +146,7 @@ function arrayToPromise(obj) {
  * @api private
  */
 
-function objectToPromise(obj){
+function objectToPromise (obj) {
   var results = new obj.constructor();
   var keys = Object.keys(obj);
   var promises = [];
@@ -162,7 +160,7 @@ function objectToPromise(obj){
     return results;
   });
 
-  function defer(promise, key) {
+  function defer (promise, key) {
     // predefine the key in the result
     results[key] = undefined;
     promises.push(promise.then(function (res) {
@@ -179,8 +177,16 @@ function objectToPromise(obj){
  * @api private
  */
 
-function isPromise(obj) {
+function isPromise (obj) {
   return 'function' == typeof obj.then;
+}
+
+// NOTE: A generator object is both, iterator and iterable
+function isIterator (obj) {
+  return 'function' === typeof obj.next
+}
+function isIterable (obj) {
+  return 'function' === typeof obj[Symbol.iterator]
 }
 
 /**
@@ -191,8 +197,8 @@ function isPromise(obj) {
  * @api private
  */
 
-function isGenerator(obj) {
-  return 'function' == typeof obj.next && 'function' == typeof obj.throw;
+function isGenerator (obj) {
+  return isIterator(obj) && isIterable(obj) && 'function' == typeof obj.throw;
 }
 
 /**
@@ -202,11 +208,10 @@ function isGenerator(obj) {
  * @return {Boolean}
  * @api private
  */
-function isGeneratorFunction(obj) {
+function isGeneratorFunction (obj) {
   var constructor = obj.constructor;
   if (!constructor) return false;
-  if ('GeneratorFunction' === constructor.name || 'GeneratorFunction' === constructor.displayName) return true;
-  return isGenerator(constructor.prototype);
+  return ('GeneratorFunction' === constructor.name || 'GeneratorFunction' === constructor.displayName)
 }
 
 /**
@@ -217,6 +222,6 @@ function isGeneratorFunction(obj) {
  * @api private
  */
 
-function isObject(val) {
+function isObject (val) {
   return Object == val.constructor;
 }

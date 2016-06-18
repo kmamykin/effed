@@ -12,6 +12,8 @@ const combineInterpreters = (...interpreters) => interpreters.reduce((combined, 
   return (effect) => combined(effect) || interpreter(effect)
 })
 
+const combineRunners = (...runners) => createRunner(combineInterpreters(...runners))
+
 const simulate = (script, interpreter) => {
   let effects = []
   const result = yio(effect => {
@@ -27,5 +29,6 @@ module.exports = {
   Effects,
   createRunner,
   combineInterpreters,
+  combineRunners,
   simulate
 }
