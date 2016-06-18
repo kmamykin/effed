@@ -1,8 +1,8 @@
 const test = require('tape')
-const { combineRunners, createRunner } = require('../src/index')
+const { createRunner } = require('../src/index')
 
 test('run', (t) => {
-  const echoRunner = (effects = []) => (effect) => {
+  const echoRunner = (effects = []) => (next) => (effect) => {
     effects.push(effect)
     return Promise.resolve({ resultOf: effect })
   }
@@ -63,32 +63,35 @@ test('run', (t) => {
   })
 })
 
+const { parallel, middleware } = require('../src/combinators')
+
 // compose runners - sequential or parallel execution?
-// test('composing effects', (t) => {
-//   const delayedRunner = (logs) => (effect) => {
-//     logs.push({ effect, message: 'started' })
-//     return new Promise((resolve, reject) => {
-//       setTimeout(() => {
-//         logs.push({ effect, message: 'finished' })
-//         resolve({ resultOf: effect })
-//       }, effect.delay || 5000)
-//     })
-//   }
-//
-//   const parallel = (effects) => ({ type: 'PARALLEL', effects })
-//
-//   t.test('parallel composition', (tt) => {
-//     const effect = { type: 'effect' }
-//     const logs = []
-//     const run = createRunner(delayedRunner(logs))
-//     run(function * () {
-//       return yield parallel([{ delay: 300 }, { delay: 400 }])
-//     }).then(result => {
-//       tt.deepEqual(result, { resultOf: effect })
-//       tt.deepEqual(effects, [effect])
-//       tt.end()
-//     }).catch(tt.end)
-//
-//   })
-// })
+test('composing effects', (t) => {
+
+  const echoRunner = () => (next) => (effect) => {
+    return Promise.resolve({ resultOf: effect })
+  }
+  const run = createRunner(middleware, echoRunner())
+
+  t.test('parallel composition of several effects', (tt) => {
+    const effect1 = { type: 'effect1' }
+    const effect2 = { type: 'effect2' }
+    run(function * () {
+      return yield parallel(effect1, effect2)
+    }).then(result => {
+      tt.deepEqual(result, [{ resultOf: effect1 }, { resultOf: effect2 }])
+      tt.end()
+    }).catch(tt.end)
+  })
+  t.test('parallel composition of array of effects', (tt) => {
+    const effect1 = { type: 'effect1' }
+    const effect2 = { type: 'effect2' }
+    run(function * () {
+      return yield parallel([effect1, effect2])
+    }).then(result => {
+      tt.deepEqual(result, [{ resultOf: effect1 }, { resultOf: effect2 }])
+      tt.end()
+    }).catch(tt.end)
+  })
+})
 // higher order runners? (wrapping runners)
