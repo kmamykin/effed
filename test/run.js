@@ -61,6 +61,18 @@ test('run', (t) => {
       tt.end()
     }).catch(tt.end)
   })
+
+  t.test('throws an error if effect is unhandled by middleware', (tt) => {
+    const effect = { type: 'effect' }
+    const run = createRunner()
+    run(function * () {
+      return yield effect
+    }).then(result => {
+      tt.fail('should reject')
+    }).catch(err => {
+      tt.end()
+    })
+  })
 })
 
 const { parallel, race, timeout, middleware } = require('../src/combinators')
@@ -70,6 +82,7 @@ test('high-level composition of effects', (t) => {
 
   const effect1 = { type: 'effect1' }
   const effect2 = { type: 'effect2' }
+  const effect3 = { type: 'effect3' }
 
   const echoRunner = () => (next) => (effect) => {
     return Promise.resolve({ resultOf: effect })
@@ -95,6 +108,15 @@ test('high-level composition of effects', (t) => {
       tt.end()
     }).catch(tt.end)
   })
+
+  // t.test('race of race', (tt) => {
+  //   run(function * () {
+  //     return yield race(race(effect1, effect2), effect3)
+  //   }).then(result => {
+  //     tt.deepEqual(result, { resultOf: effect1 }, 'resolves with the result of an effect resolved first') // first effect will get resolved firsts. Is it deterministic enough for tests?
+  //     tt.end()
+  //   }).catch(tt.end)
+  // })
 
   t.test('timeout', (tt) => {
     run(function * () {
