@@ -63,33 +63,44 @@ test('run', (t) => {
   })
 })
 
-const { parallel, middleware } = require('../src/combinators')
+const { parallel, race, timeout, middleware } = require('../src/combinators')
 
 // compose runners - sequential or parallel execution?
-test('composing effects', (t) => {
+test('high-level composition of effects', (t) => {
+
+  const effect1 = { type: 'effect1' }
+  const effect2 = { type: 'effect2' }
 
   const echoRunner = () => (next) => (effect) => {
     return Promise.resolve({ resultOf: effect })
   }
   const run = createRunner(middleware, echoRunner())
 
-  t.test('parallel composition of several effects', (tt) => {
-    const effect1 = { type: 'effect1' }
-    const effect2 = { type: 'effect2' }
+  t.test('parallel', (tt) => {
+    tt.deepEqual(parallel(effect1, effect2), parallel([effect1, effect2]), 'takes multiple args or an array')
     run(function * () {
       return yield parallel(effect1, effect2)
     }).then(result => {
-      tt.deepEqual(result, [{ resultOf: effect1 }, { resultOf: effect2 }])
+      tt.deepEqual(result, [{ resultOf: effect1 }, { resultOf: effect2 }], 'resolves with an array of results')
       tt.end()
     }).catch(tt.end)
   })
-  t.test('parallel composition of array of effects', (tt) => {
-    const effect1 = { type: 'effect1' }
-    const effect2 = { type: 'effect2' }
+
+  t.test('race', (tt) => {
+    tt.deepEqual(race(effect1, effect2), race([effect1, effect2]), 'takes multiple args or an array')
     run(function * () {
-      return yield parallel([effect1, effect2])
+      return yield race(effect1, effect2)
     }).then(result => {
-      tt.deepEqual(result, [{ resultOf: effect1 }, { resultOf: effect2 }])
+      tt.deepEqual(result, { resultOf: effect1 }, 'resolves with the result of an effect resolved first') // first effect will get resolved firsts. Is it deterministic enough for tests?
+      tt.end()
+    }).catch(tt.end)
+  })
+
+  t.test('timeout', (tt) => {
+    run(function * () {
+      return yield timeout(100)
+    }).then(result => {
+      tt.equals(result, undefined, 'resolves with undefined result')
       tt.end()
     }).catch(tt.end)
   })

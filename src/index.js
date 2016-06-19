@@ -1,6 +1,6 @@
 const co = require('./co')
 const {Effects, isEffect} = require('./effect')
-const {argsOrArray} = require('./helpers')
+const {argsAsArray} = require('./helpers')
 // PONDER: is interpreter == dispatcher? are we interpreting effects or dispatching effects to be run or interpreted?
 // interpreter :: effect -> Promise<result>
 // middleware :: next -> interpreter
@@ -12,16 +12,16 @@ const createRunner = (...middlewares) => (script) => {
 const terminalInterpreter = (effect) => Promise.reject(new Error(`Effect ${effect} can not be interpreted. Did you include the right middleware?`))
 
 // [middleware] -> interpreter
-const createInterpreter = (...middlewares) => combineMiddleware(...middlewares)(terminalInterpreter)
+const createInterpreter = (...middlewares) => chainMiddleware(...middlewares)(terminalInterpreter)
 
 const passThroughMiddleware = (next) => (effect) => next(effect)
 
-// combineMiddleware :: [middleware] -> middleware
-const combineMiddleware = (...middlewares) => {
+// chainMiddleware :: [middleware] -> middleware
+const chainMiddleware = (...middlewares) => {
   // can be called with multiple args or one array
   // combined :: next => effect => Promise
   // middleware :: next => effect => Promise
-  return argsOrArray(...middlewares).reduceRight((combined, middleware) => (next) => middleware(combined(next)), passThroughMiddleware)
+  return argsAsArray(...middlewares).reduceRight((combined, middleware) => (next) => middleware(combined(next)), passThroughMiddleware)
 }
 
 const simulate = (script, interpreter) => {
@@ -38,7 +38,7 @@ module.exports = {
   isEffect,
   Effects,
   createRunner,
-  combineMiddleware,
+  chainMiddleware,
   createInterpreter,
   simulate
 }
