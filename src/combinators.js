@@ -3,7 +3,7 @@ const {argsAsArray} = require('./helpers')
 
 const TIMEOUT = Symbol('TIMEOUT')
 const timeout = (milliseconds) => ({type: TIMEOUT, milliseconds})
-const timeoutMiddleware = () => (next) => (effect) => {
+const timeoutMiddleware = (run) => (next) => (effect) => {
   if (effect.type === TIMEOUT && effect.milliseconds) {
     return new Promise((resolve) => {
       setTimeout(resolve, effect.milliseconds)
@@ -15,9 +15,9 @@ const timeoutMiddleware = () => (next) => (effect) => {
 
 const PARALLEL = Symbol('PARALLEL')
 const parallel = (...effects) => ({ type: PARALLEL, effects: argsAsArray(...effects) })
-const parallelMiddleware = () => (next) => (effect) => {
+const parallelMiddleware = (run) => (next) => (effect) => {
   if (effect.type === PARALLEL) {
-    return Promise.all((effect.effects || []).map(e => next(e)))
+    return Promise.all((effect.effects || []).map(e => run(e)))
   } else {
     return next(effect)
   }
@@ -25,9 +25,9 @@ const parallelMiddleware = () => (next) => (effect) => {
 
 const RACE = Symbol('RACE')
 const race = (...effects) => ({ type: RACE, effects: argsAsArray(...effects) })
-const raceMiddleware = () => (next) => (effect) => {
+const raceMiddleware = (run) => (next) => (effect) => {
   if (effect.type === RACE) {
-    return Promise.race((effect.effects || []).map(e => next(e)))
+    return Promise.race((effect.effects || []).map(e => run(e)))
   } else {
     return next(effect)
   }
@@ -38,5 +38,5 @@ module.exports = {
   all: parallel,
   race,
   timeout,
-  middleware: chainMiddleware(parallelMiddleware(), raceMiddleware(), timeoutMiddleware())
+  middleware: chainMiddleware(parallelMiddleware, raceMiddleware, timeoutMiddleware)
 }
