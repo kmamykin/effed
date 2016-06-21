@@ -23,6 +23,7 @@
   "scripts": {
     "clean": "rm -rf lib dist es coverage",
     "test": "tape 'test/**/*.js'",
+    "test:debug": "node-debug node_modules/tape/bin/tape 'test/**/*.js'",
     "build:commonjs": "BABEL_ENV=commonjs babel src --out-dir lib",
     "build:es": "BABEL_ENV=es babel src --out-dir es",
     "build:umd": "BABEL_ENV=commonjs NODE_ENV=development webpack src/index.js dist/effed.js",

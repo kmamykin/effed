@@ -5,9 +5,10 @@ const {argsAsArray} = require('./helpers')
 // interpreter :: effect -> Promise<result>
 // middleware :: run -> next -> interpreter
 // script :: Iterator<effect> || effect
-const createRunner = (...middlewares) => (script) => {
-  const interpreter = chainMiddleware(...middlewares)((effect) => interpreter(effect))(terminalInterpreter)
-  return co(interpreter, script)
+const createRunner = (...middlewares) => {
+  const middleware = chainMiddleware(...middlewares)
+  const interpreter = middleware((effect) => co(interpreter, effect))(terminalInterpreter)
+  return (effect) => co(interpreter, effect)
 }
 
 const terminalInterpreter = (effect) => Promise.reject(new Error(`Effect ${effect} can not be interpreted. Did you include the right middleware?`))

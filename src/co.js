@@ -26,7 +26,7 @@ function co (interpreter, gen) {
   // which leads to memory leak errors.
   // see https://github.com/tj/co/issues/180
   return new Promise(function (resolve, reject) {
-    if (!gen || !isIterator(gen)) return resolve(gen);
+    if (typeof gen === 'undefined' || !isIterator(gen)) return resolve(gen);
 
     onFulfilled();
 
