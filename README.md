@@ -57,7 +57,7 @@ run(function * () {
 Generally on a project, there will be one module that export such function, already created with all middleware
 that a project uses.
 
-`run :: Effect -> Promise<any>``
+`run :: Effect -> Promise<any>`
 
 *middleware* - implements the logic of running an effect and returns a promise with the result of the effect.
 Middlewares are passed to `createRunner` function, where they are chained internally into a pipeline and used
