@@ -23,21 +23,17 @@ test('run', (t) => {
     const effects = []
     const run = createRunner(loggingRunner(effects))
     Promise.all(['a string', 100, true, sym, { a: 1 }, fn].map(run)).then(result => {
-      tt.deepEqual(result, ['a string', 100, true, sym, { a: 1 }, fn])
-      tt.deepEqual(effects, [])
+      tt.deepEqual(effects, ['a string', 100, true, sym, { a: 1 }, fn])
     }).then(tt.end, tt.end)
   })
-  t.test('accepts single effect')
-  // accepting iterable is ambiguous, a string is iterable
-  t.test('accepts iterator', (tt) => {
+  t.test('accepts single effect', (tt) => {
     const effects = []
     const run = createRunner(loggingRunner(effects))
-    run([effect1, effect2][Symbol.iterator]()).then(result => {
-      tt.equals(result, undefined, 'iterators like an array yield { value: undefined, done: true } at the end')
-      tt.deepEqual(effects, [effect1, effect2], 'all effects yielded by iterator are offered to runners')
+    run(effect1).then(result => {
+      tt.deepEqual(result, {resultOf: effect1})
+      tt.deepEqual(effects, [effect1])
     }).then(tt.end, tt.end)
   })
-
   // result of gen func executed
   t.test('accepts generator', (tt) => {
     const effects = []
@@ -64,7 +60,20 @@ test('run', (t) => {
     }).then(tt.end, tt.end)
   })
 
-  t.test('returns value that is yielded', (tt) => {
+  t.test('accepts generator function yielding another generator function', (tt) => {
+    const effects = []
+    const run = createRunner(loggingRunner(effects))
+    run(function * () {
+      return yield function * () {
+        return yield effect1
+      }
+    }).then(result => {
+      tt.deepEqual(result, { resultOf: effect1 })
+      tt.deepEqual(effects, [effect1])
+    }).then(tt.end, tt.end)
+  })
+
+  t.test('accepts generator function yielding another generator', (tt) => {
     const effects = []
     const run = createRunner(loggingRunner(effects))
     function * script() {
@@ -83,26 +92,13 @@ test('run', (t) => {
     run(function * () {
       return yield effect1
     }).then(result => {
-      tt.fail('should reject')
+      tt.fail('should be rejected')
     }).catch(err => {
       tt.end()
     })
   })
 })
 
-test('returns value that is yielded', (tt) => {
-  // const effects = []
-  // const run = createRunner(loggingRunner(effects))
-  function * script() {
-    return yield effect1
-  }
-  run(function * () {
-    return yield script()
-  }).then(result => {
-    tt.deepEqual(result, { resultOf: effect1 })
-    // tt.deepEqual(effects, [effect1])
-  }).then(tt.end, tt.end)
-})
 
 // compose runners - sequential or parallel execution?
 test('high-level composition of effects', (t) => {

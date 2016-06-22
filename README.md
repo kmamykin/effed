@@ -26,7 +26,7 @@ export const fetchMiddleware = (run) => (next) => (effect) => {
 }
 
 // define effect creator function
-export const fetch = (url, options = {}) => (type: 'fetch', url, options)
+export const fetch = (url, options = {}) => ({type: 'fetch', url, options})
 
 
 // inside index.js
