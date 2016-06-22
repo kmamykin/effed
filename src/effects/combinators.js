@@ -1,5 +1,5 @@
-const {chainMiddleware} = require('./index')
-const {argsAsArray} = require('./helpers')
+const chainMiddleware = require('./../chainMiddleware')
+const {argsAsArray} = require('./../helpers')
 
 const TIMEOUT = Symbol('TIMEOUT')
 const timeout = (milliseconds) => ({type: TIMEOUT, milliseconds})

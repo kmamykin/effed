@@ -1,6 +1,6 @@
 const test = require('tape')
 const { createRunner } = require('../src/index')
-const { parallel, race, pipe, middleware } = require('../src/combinators')
+const { parallel, race, pipe } = require('../src/effects/combinators')
 
 const effect1 = { type: 'effect1' }
 const effect2 = { type: 'effect2' }
@@ -14,7 +14,7 @@ const echoRunner = () => (run) => (next) => (effect) => {
   }
 }
 
-const run = createRunner(middleware, echoRunner())
+const run = createRunner(echoRunner())
 
 test('run', (t) => {
   const loggingRunner = (effects = []) => (run) => (next) => (effect) => {
