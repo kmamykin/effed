@@ -1,14 +1,19 @@
 const test = require('tape')
 const { createRunner } = require('../src/index')
-const { parallel, race, timeout, middleware } = require('../src/combinators')
+const { parallel, race, pipe, middleware } = require('../src/combinators')
 
 const effect1 = { type: 'effect1' }
 const effect2 = { type: 'effect2' }
 const effect3 = { type: 'effect3' }
 
 const echoRunner = () => (run) => (next) => (effect) => {
-  return Promise.resolve({ resultOf: effect })
+  if (effect === effect1 || effect === effect2 || effect === effect3) {
+    return Promise.resolve({ resultOf: effect })
+  } else {
+    return next(effect)
+  }
 }
+
 const run = createRunner(middleware, echoRunner())
 
 test('run', (t) => {
@@ -158,11 +163,11 @@ test('high-level composition of effects', (t) => {
     }).then(tt.end, tt.end)
   })
 
-  t.test('timeout', (tt) => {
+  t.test('pipe of effects', (tt) => {
     run(function * () {
-      return yield timeout(100)
+      return yield pipe(effect1, (_) => effect2, (_) => effect3)
     }).then(result => {
-      tt.equals(result, undefined, 'resolves with undefined result')
+      tt.deepEqual(result, { resultOf: effect3 })
     }).then(tt.end, tt.end)
   })
 })

@@ -33,10 +33,21 @@ const raceMiddleware = (run) => (next) => (effect) => {
   }
 }
 
+const PIPE = Symbol('PIPE')
+const pipe = (first, ...fns) => ({ type: PIPE, first, fns: argsAsArray(...fns) })
+const pipeMiddleware = (run) => (next) => (effect) => {
+  if (effect.type === PIPE) {
+    return effect.fns.reduce((chain, fn) => chain.then(result => run(fn(result))), run(effect.first))
+  } else {
+    return next(effect)
+  }
+}
+
 module.exports = {
   parallel,
   all: parallel,
   race,
+  pipe,
   timeout,
-  middleware: chainMiddleware(parallelMiddleware, raceMiddleware, timeoutMiddleware)
+  middleware: chainMiddleware(parallelMiddleware, raceMiddleware, pipeMiddleware, timeoutMiddleware)
 }
