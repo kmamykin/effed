@@ -14,73 +14,61 @@ const echoRunner = () => (run) => (next) => (effect) => {
   }
 }
 
-const run = createRunner(echoRunner())
+const loggingRunner = (yielded) => (run) => (next) => (effect) => {
+  yielded.push(effect)
+  return next(effect)
+}
+
+const yielded = []
+const run = createRunner(loggingRunner(yielded), echoRunner())
 
 test('run', (t) => {
-  const loggingRunner = (effects = []) => (run) => (next) => (effect) => {
-    effects.push(effect)
-    return Promise.resolve({ resultOf: effect })
-  }
 
-  t.test('accepts primitive and objects and returns then in a promise, but dos not run them', (tt) => {
-    const sym = Symbol('symbol')
-    const fn = () => {}
-    const effects = []
-    const run = createRunner(loggingRunner(effects))
-    Promise.all(['a string', 100, true, sym, { a: 1 }, fn].map(run)).then(result => {
-      tt.deepEqual(effects, ['a string', 100, true, sym, { a: 1 }, fn])
-    }).then(tt.end, tt.end)
-  })
   t.test('accepts single effect', (tt) => {
-    const effects = []
-    const run = createRunner(loggingRunner(effects))
+    yielded.length = 0
     run(effect1).then(result => {
       tt.deepEqual(result, {resultOf: effect1})
-      tt.deepEqual(effects, [effect1])
+      tt.deepEqual(yielded, [effect1])
     }).then(tt.end, tt.end)
   })
   // result of gen func executed
   t.test('accepts generator', (tt) => {
-    const effects = []
-    const run = createRunner(loggingRunner(effects))
+    yielded.length = 0
     const script = function * () {
       return yield effect1
     }
     run(script()).then(result => {
       tt.deepEqual(result, { resultOf: effect1 })
-      tt.deepEqual(effects, [effect1])
+      tt.deepEqual(yielded, [effect1])
     }).then(tt.end, tt.end)
   })
 
   t.test('accepts generator function', (tt) => {
     // sometimes its just easier to run generator function
     // defined inline
-    const effects = []
-    const run = createRunner(loggingRunner(effects))
+    yielded.length = 0
     run(function * () {
       return yield effect1
     }).then(result => {
       tt.deepEqual(result, { resultOf: effect1 })
-      tt.deepEqual(effects, [effect1])
+      tt.deepEqual(yielded, [effect1])
     }).then(tt.end, tt.end)
   })
 
   t.test('accepts generator function yielding another generator function', (tt) => {
-    const effects = []
-    const run = createRunner(loggingRunner(effects))
+    yielded.length = 0
     run(function * () {
       return yield function * () {
         return yield effect1
       }
     }).then(result => {
       tt.deepEqual(result, { resultOf: effect1 })
-      tt.deepEqual(effects, [effect1])
+      tt.deepEqual(yielded, [effect1])
     }).then(tt.end, tt.end)
   })
 
   t.test('accepts generator function yielding another generator', (tt) => {
-    const effects = []
-    const run = createRunner(loggingRunner(effects))
+    yielded.length = 0
     function * script() {
       return yield effect1
     }
@@ -88,14 +76,20 @@ test('run', (t) => {
       return yield script()
     }).then(result => {
       tt.deepEqual(result, { resultOf: effect1 })
-      tt.deepEqual(effects, [effect1])
+      tt.deepEqual(yielded, [effect1])
     }).then(tt.end, tt.end)
   })
 
   t.test('throws an error if effect is unhandled by middleware', (tt) => {
-    const run = createRunner()
+    run({type: 'unknown'}).then(result => {
+      tt.fail('should be rejected')
+    }).catch(err => {
+      tt.end()
+    })
+  })
+  t.test('throws an error if yielded effect is unhandled by middleware', (tt) => {
     run(function * () {
-      return yield effect1
+      return yield {type: 'unknown'}
     }).then(result => {
       tt.fail('should be rejected')
     }).catch(err => {
@@ -106,7 +100,7 @@ test('run', (t) => {
 
 
 // compose runners - sequential or parallel execution?
-test('high-level composition of effects', (t) => {
+test('high-level composition of yielded', (t) => {
 
   t.test('parallel', (tt) => {
     tt.deepEqual(parallel(effect1), parallel([effect1]), 'takes multiple args or an array')
@@ -163,7 +157,7 @@ test('high-level composition of effects', (t) => {
     }).then(tt.end, tt.end)
   })
 
-  t.test('pipe of effects', (tt) => {
+  t.test('pipe of yielded', (tt) => {
     run(function * () {
       return yield pipe(effect1, (_) => effect2, (_) => effect3)
     }).then(result => {
