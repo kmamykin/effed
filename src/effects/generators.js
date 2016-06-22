@@ -1,14 +1,20 @@
-module.exports = () => (run) => (next) => (effect) => {
-  if (isGeneratorFunction(effect)) {
-    return drive(run, effect())
-  } else if (isGenerator(effect)) {
-    return drive(run, effect)
-  } else {
-    return next(effect)
+module.exports = {
+  'default': generatorsMiddleware
+}
+
+function generatorsMiddleware () {
+  return (run) => (next) => (effect) => {
+    if (isGeneratorFunction(effect)) {
+      return drive(run, effect())
+    } else if (isGenerator(effect)) {
+      return drive(run, effect)
+    } else {
+      return next(effect)
+    }
   }
 }
 
-function drive(run, gen) {
+function drive (run, gen) {
   // we wrap everything in a promise to avoid promise chaining,
   // which leads to memory leak errors.
   return new Promise(function (resolve, reject) {

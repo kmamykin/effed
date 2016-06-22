@@ -1,8 +1,8 @@
 const chainMiddleware = require('./../chainMiddleware')
-const {argsAsArray} = require('./../helpers')
+const { argsAsArray } = require('./../helpers')
 
 const TIMEOUT = Symbol('TIMEOUT')
-const timeout = (milliseconds) => ({type: TIMEOUT, milliseconds})
+const timeout = (milliseconds) => ({ type: TIMEOUT, milliseconds })
 const timeoutMiddleware = (run) => (next) => (effect) => {
   if (effect.type === TIMEOUT && effect.milliseconds) {
     return new Promise((resolve) => {
@@ -43,11 +43,13 @@ const pipeMiddleware = (run) => (next) => (effect) => {
   }
 }
 
+const combinatorsMiddleware = () => chainMiddleware(parallelMiddleware, raceMiddleware, pipeMiddleware, timeoutMiddleware)
+
 module.exports = {
+  'default': combinatorsMiddleware,
   parallel,
   all: parallel,
   race,
   pipe,
-  timeout,
-  middleware: chainMiddleware(parallelMiddleware, raceMiddleware, pipeMiddleware, timeoutMiddleware)
+  timeout
 }
