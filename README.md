@@ -8,6 +8,13 @@ expressed as a generator yielding effects (which are plain objects) and the run 
 While inspired by `redux` the proposed model of computation is generic enough to be used anywhere where generators
 are supported, in the browser or in node.js environment.
 
+## Benefits
+
+* Defer side-effect
+* Synchronous testing
+* Multiple interpretation of effects
+* Effect composition, creating high-level DSL effects
+
 ## Quick example
 
 ```javascript
@@ -90,3 +97,11 @@ The scripts themselves are synchronous generators, and the tests just need to ve
 of effects when fed predefined results of previous effects.
 
 ## FAQ
+
+## Questions
+
+* how is stack handled? Free monad trampolines computation without using stack, will generators do that?
+
+Write your program using exactly the language you need.
+Compose your language from smaller orthogonal languages, in a canonical way.
+Plug in interpreters that support the behavior you want.

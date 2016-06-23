@@ -1,32 +1,43 @@
+const { createRunner } = require('../index')
+const matches = require('tmatch')
+const assert = require('assert')
 
-const playByPlay = script => {
-  const builder = (expectations, result) => ({
-    expect: (effect, effectResult) => builder([...expectations, [effect, effectResult]], result),
-    returns: r => builder(expectations, r),
-    then: (onResolved, onRejected) => {
-      yio(effect => {
-        try {
-          //          console.log('expectations', expectations)
-          assert(expectations.length > 0, `No more expectations left and effect yielded: ${inspect(effect)}`)
-          const [expectedEffect, expectedResult] = expectations.shift()
-          //          console.log('ASSERT actual:', effect, 'expected:', expectedEffect)
-          assert.deepEqual(effect, expectedEffect, 'Effects no match')
-          return expectedResult instanceof Error ? Promise.reject(expectedResult) : Promise.resolve(expectedResult)
-        } catch (err) {
-          //          console.log('catch(err)', err)
-          return Promise.reject(err)
-        }
-      }, script)
-        .then(scriptResult => {
-          //          console.log('in scriptResult check', scriptResult, expectations)
-          assert(expectations.length === 0, `Some expectations left un-yielded: ${inspect(expectations)}`)
-          assert.deepEqual(scriptResult, result, 'Results dont match')
-          return scriptResult
-        })
-        .then(onResolved, onRejected)
+const createStubMiddleware = (expectations) => {
+  const middleware = (run) => (next) => (effect) => {
+    const [nextEffect, nextResult] = expectations.shift()
+    if (effectsMatch(effect, nextEffect)) {
+      console.log(`Matched ${effect}, continuing with ${nextResult}`)
+      return Promise.resolve(nextResult)
+    } else {
+      return next(effect)
     }
-  })
-  return builder([], undefined)
+  }
+  return middleware
+}
+
+const simulate = (script) => {
+  const expectationsBuilder = (expectations, expectedReturn) => {
+    return {
+      yields: (effect) => expectationsBuilder([...expectations, [effect]], expectedReturn),
+      continue: (result) => {
+        const [effect] = expectations.pop()
+        return expectationsBuilder([...expectations, [effect, result]], expectedReturn)
+      },
+      returns: (returnValue) => expectationsBuilder(expectations, returnValue),
+      then: (onResolve, onReject) => {
+        const mock = createStubMiddleware(expectations)
+        const run = createRunner(mock)
+        run(script).then(result => {
+          assert.deepEqual(result, expectedReturn)
+        }).then(onResolve, onReject)
+      }
+    }
+  }
+  return expectationsBuilder([], null)
+}
+
+const effectsMatch = (actual, expectedPattend) => {
+  return matches(actual, expectedPattend)
 }
 
 const yieldExpectation = (effect, result) => (t, actual) => {
@@ -45,24 +56,8 @@ const noReturnsExpectation = () => (t, actualReturn) => {
   console.log(actualReturn)
 }
 
-const createSumulator = (script, expectations, returnCheck) => {
-  return {
-    yields: (effect, result = undefined) => createSumulator(script, [...expectations, yieldExpectation(effect, result)], returnCheck),
-    returns: (returnValue) => createSumulator(script, expectations, returnsExpectation(returnValue)),
-    end: () => (t) => {
-      let yielded = script.next()
-      while(!yielded.done) {
-        let expected = expectations.shift()
-        yielded = script.next(expected(t, yielded.value))
-      }
-      // check return
-      returnCheck(t, yielded.value)
-      t.end()
-    }
-  }
-}
-
+// TODO: define spyMiddleware to be used on an existing chain of middleware, to later assert that a particular effect was run
 module.exports = {
-  simulate: (script) => createSumulator(script, [], noReturnsExpectation())
+  createStubMiddleware,
+  simulate
 }
-

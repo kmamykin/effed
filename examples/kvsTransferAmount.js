@@ -44,14 +44,28 @@ console.log(util.inspect(storage.getItem(`accounts:yours`), {showHidden: true}))
 console.log(util.inspect(storage.getItem(`accounts:yours`), {showHidden: true}))
 assert.deepEqual(storage.getItem(`accounts:yours`), storage.getItem(`accounts:yours`))
 
-// const test = require('tape')
-// const {simulate} = require('../src/testing')
-// test('transferAmount', simulate(transferAmount('yours', 'mine', 1000))
-//     .yields(storage.getItem(`accounts:yours`), 1000)
-//     .yields(storage.getItem(`accounts:mine`), 0)
-//     .yields(storage.setItem('accounts:yours', 0))
-//     .yields(storage.setItem('accounts:mine', 1000))
-//     .returns(1000)
-//     .end()
-// )
-//
+const test = require('tape')
+const {simulate, createStubMiddleware} = require('../src/testing')
+
+test('transferAmount with simulate', t => {
+  simulate(transferAmount('yours', 'mine', 1000))
+    .yields(storage.getItem('accounts:yours')).continue(1000)
+    .yields(storage.getItem('accounts:mine')).continue(0)
+    .yields(storage.setItem('accounts:yours', 0)).continue()
+    .yields(storage.setItem('accounts:mine', 1000)).continue()
+    .returns(1000)
+    .then(t.end, t.end)
+})
+
+test('transferAmount with mockRunner', t => {
+  const run = createRunner(createStubMiddleware([
+    [storage.getItem('accounts:yours'), 1000],
+    [storage.getItem('accounts:mine'), 0],
+    [storage.setItem('accounts:yours', 0)],
+    [storage.setItem('accounts:mine', 1000)]
+  ]))
+  run(transferAmount('yours', 'mine', 1000)).then(result => {
+    t.equals(result, 1000)
+  }).then(t.end, t.end)
+})
+
