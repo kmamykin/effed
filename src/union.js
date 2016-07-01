@@ -1,10 +1,12 @@
 // TODO: move union in a different npm module
+// TODO: Read up on previous state of art for Algebraic Data Types in JavaScript
+// e.g. http://w3future.com/weblog/stories/2008/06/16/adtinjs.xml
 const util = require('util')
 const returnVoid = x => {}
 
 function createUnionType (types) {
   return function UnionType () {
-    throw TypeError(`Union type can not be used without concrete constructor. User ${types}`)
+    throw TypeError(`Union type can not be used without concrete constructor. Use ${types}`)
   }
 }
 

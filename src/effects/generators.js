@@ -72,6 +72,6 @@ function isIterable (obj) {
 }
 
 function isPromise (obj) {
-  return 'function' == typeof obj.then;
+  return 'function' === typeof obj.then;
 }
 

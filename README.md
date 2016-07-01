@@ -89,6 +89,10 @@ export default createRunner(myMiddleware({}), importedMiddleware({}))
 
 ## Composition of effects
 
+// How do we combine multiple effects?
+// Option 1: Create larger effects, with its own creators and runners
+// Option 2: Combine several low level effects using generators
+
 ## Testing
 
 The major benefit of expressing the logic as a generator emitting effects is the ease of testing.

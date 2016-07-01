@@ -1,23 +1,44 @@
-import storage from './storage'
+const CACHE = Symbol('CACHE')
 
-export default {
-  fetch: (key, onMiss) => ({type: 'FETCH_CACHED', key, onMiss})
-}
-
-export const runner = ({storageRunner, githubRunner}) => effect => {
-  switch (effect.type) {
-    case 'FETCH_CACHED':
-      return storageRunner(storage.getItem(effect.username))
-        .then(cachedUserOrNull => {
-          if (cachedUserOrNull) {
-            return cachedUserOrNull
+const asyncCacheMiddleware = ({ get, set }) => (run) => (next) => {
+  const actions = {
+    [CACHE]: ({ options, effect }) => {
+      return get(options.key)
+        .then(value => {
+          if (value) {
+            return value
           } else {
-            return githubRunner(github.getUser(effect.username))
-              .then(githubUser => {
-                return storageRunner(storage.setItem(effect.username, githubUser))
-                  .then(_ => githubUser)
-              })
+            return run(effect)
+              .then(value => set(options.key, value).then(() => value))
           }
         })
+    }
   }
+  return (effect) => (actions[effect.type] || next)(effect)
 }
+
+const memoryCacheMiddleware = (map) => (run) => (next) => {
+  const actions = {
+    [CACHE]: ({ options, effect }) => new Promise((resolve, reject) => {
+      if (map[options.key]) {
+        resolve(map[options.key])
+      } else {
+        run(effect).then(value => {
+          map[options.key] = value
+          resolve(value)
+        }, error => {
+          // nothing set in the map
+          reject(error)
+        })
+      }
+    })
+  }
+  return (effect) => (actions[effect.type] || next)(effect)
+}
+
+module.exports = {
+  asyncCacheMiddleware,
+  memoryCacheMiddleware,
+  cache: (options, effect) => ({ type: CACHE, options: (typeof options === 'string' ? { key: options } : options), effect })
+}
+

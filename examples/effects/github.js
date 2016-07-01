@@ -1,23 +1,28 @@
-// Github effects moduel.
-// Exports effect creators and effect runner
-import fetch from 'node-fetch'
+// Github effects module
+const {fetch} = require('./fetch')
+const {all} = require('../../src/effects/combinators')
 
-export default {
-  getUser: username => ({type: 'GET_USER', username}),
-  getFollowers: url => ({type: 'GET_FOLLOWERS', url})
-}
-
-// runner :: config -> effect -> Promise
-export const runner = config => effect => {
-  switch (effect.type) {
-    case 'GET_USER':
-      const getUserUrl = `https://api.github.com/users/${effect.username}`
-      console.log(`fetch(${getUserUrl})`)
-      return fetch(getUserUrl).then(r => r.json())
-    case 'GET_FOLLOWERS':
-      const getFollowersUrl = effect.url
-      console.log(`fetch(${getFollowersUrl})`)
-      return fetch(getFollowersUrl).then(r => r.json())
+function * getUser (username) {
+  const getUserUrl = `https://api.github.com/users/${username}`
+  const response = yield fetch(getUserUrl)
+  if (response.ok) {
+    return response.body
+  } else {
+    throw new Error(response.statusText)
   }
 }
 
+function * getUsers (names) {
+  return yield all(names.map(getUser))
+}
+
+function * getFollowers (userNameOrUrl) {
+
+}
+
+// Exports effect creators
+module.exports = {
+  getUser,
+  getUsers,
+  getFollowers
+}

@@ -12,17 +12,7 @@ const createRunner = (...middlewares) => {
 
 const terminalNext = (effect) => Promise.reject(new Error(`Effect ${effect} can not be interpreted. Did you include the right middleware?`))
 
-const simulate = (script, interpreter) => {
-  let effects = []
-  const result = yio(effect => {
-    effects = [...effects, effect]
-    return interpreter(effect)
-  }, script)
-  return result.then(r => ({ effects, result: r }))
-}
-
 module.exports = {
   createRunner,
-  chainMiddleware,
-  simulate
+  chainMiddleware
 }
