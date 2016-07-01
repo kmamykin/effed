@@ -7,9 +7,9 @@ const { getUser } = require('./effects/github')
 const { cache } = require('./effects/cache')
 const { all } = require('../src/effects/combinators')
 const R = require('ramda')
-function * findPopularUsername (...usernames) {
+function * mostPopularUsername (usernames) {
   const users = yield all(usernames.map(username => cache({ key: `users:${username}` }, getUser(username))))
-  return R.takeLast(1, R.sortBy(R.prop('followers'), users))
+  return R.propOr('Unknown', 'login', R.last(R.sortBy(R.prop('followers'), users)))
 }
 
 const { createRunner } = require('../src/index')
@@ -18,12 +18,11 @@ const { memoryCacheMiddleware } = require('./effects/cache')
 const map = new Map()
 
 const run = createRunner(memoryCacheMiddleware(map), fetchMiddleware({}))
-run(findPopularUsername('kmamykin', 'hamin', 'mjording', 'Ocramius', 'brianchandotcom'))
+run(mostPopularUsername(['kmamykin', 'hamin', 'mjording', 'Ocramius', 'brianchandotcom']))
   .then(console.log.bind(console, 'Most popular user'))
-  // .then(_ => console.log(map))
-  .catch(console.error)
+  .catch(err => console.error('Failure:', err))
 
-// playByPlay(findPopularUsername('kmamykin', 'mojombo'))
+// playByPlay(mostPopularUsername('kmamykin', 'mojombo'))
 //   .expect(storage.getItem('users:kmamykin'), null)
 //   .expect(github.getUser('kmamykin'), {login: 'kmamykin', followers: 10})
 //   .expect(storage.setItem('users:kmamykin', {login: 'kmamykin', followers: 10}))
