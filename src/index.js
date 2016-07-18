@@ -1,6 +1,6 @@
 const chainMiddleware = require('./chainMiddleware')
 const generators = require('./effects/generators').default
-const combinators = require('./effects/combinators').default
+const {'default': combinators, parallel, all, race, pipe} = require('./effects/combinators')
 
 // interpreter :: effect -> Promise<result>
 // middleware :: run -> next -> interpreter
@@ -14,5 +14,5 @@ const terminalNext = (effect) => Promise.reject(new Error(`Effect ${effect} can 
 
 module.exports = {
   createRunner,
-  chainMiddleware
+  parallel, all, race, pipe
 }

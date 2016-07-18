@@ -1,6 +1,5 @@
 const test = require('tape')
-const { createRunner } = require('../src/index')
-const { parallel, race, pipe } = require('../src/effects/combinators')
+const { createRunner, parallel, race, pipe } = require('../src/index')
 
 const effect1 = { type: 'effect1' }
 const effect2 = { type: 'effect2' }
