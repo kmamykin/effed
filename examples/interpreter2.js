@@ -17,19 +17,18 @@ const fetchMiddleware = require('./effects/fetch').default
 const { memoryCacheMiddleware } = require('./effects/cache')
 const map = new Map()
 
-const run = createRunner(memoryCacheMiddleware(map), fetchMiddleware({}))
-run(mostPopularUsername(['kmamykin', 'hamin', 'mjording', 'Ocramius', 'brianchandotcom']))
-  .then(console.log.bind(console, 'Most popular user'))
-  .catch(err => console.error('Failure:', err))
+// const run = createRunner(memoryCacheMiddleware(map), fetchMiddleware({}))
+// run(mostPopularUsername(['kmamykin', 'hamin', 'mjording', 'Ocramius', 'brianchandotcom']))
+//   .then(console.log.bind(console, 'Most popular user'))
+//   .catch(err => console.error('Failure:', err))
 
-// playByPlay(mostPopularUsername('kmamykin', 'mojombo'))
-//   .expect(storage.getItem('users:kmamykin'), null)
-//   .expect(github.getUser('kmamykin'), {login: 'kmamykin', followers: 10})
-//   .expect(storage.setItem('users:kmamykin', {login: 'kmamykin', followers: 10}))
-//   .expect(storage.getItem('users:mojombo'), null)
-//   .expect(github.getUser('mojombo'), {login: 'mojombo', followers: 1000})
-//   .expect(storage.setItem('users:mojombo', {login: 'mojombo', followers: 1000}))
-//   .returns('mojombo')
-//   .then(console.log, console.error)
+const test = require('tape')
+const {simulate} = require('../src/testing')
 
-
+test('mostPopularUsername', t => {
+  simulate(mostPopularUsername(['kmamykin', 'mojombo']))
+    .yields(cache('users:kmamykin', getUser('kmamykin'))).continue({login: 'kmamykin', followers: 10})
+    .yields(cache('users:mojombo', getUser('mojombo'))).continue({login: 'mojombo', followers: 1000})
+    .returns('mojombo')
+    .then(t.end, t.end)
+})

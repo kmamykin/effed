@@ -1,12 +1,13 @@
 const { createRunner } = require('../index')
 const matches = require('tmatch')
 const assert = require('assert')
+const util = require('util')
 
 const createStubMiddleware = (expectations) => {
   const middleware = (run) => (next) => (effect) => {
     const [nextEffect, nextResult] = expectations.shift()
     if (effectsMatch(effect, nextEffect)) {
-      console.log(`Matched ${effect}, continuing with ${nextResult}`)
+      console.log(`Matched ${util.inspect(effect)}, continuing with ${util.inspect(nextResult)}`)
       return Promise.resolve(nextResult)
     } else {
       return next(effect)
